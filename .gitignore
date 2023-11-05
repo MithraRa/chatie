@@ -1,5 +1,4 @@
 /bin/
-/pkg/
 
 *.tmp
 *.bak
@@ -21,3 +20,5 @@
 *.swp
 .DS_Store
 Thumbs.db
+
+/postgres
