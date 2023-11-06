@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -62,12 +61,11 @@ func (s *UserService) CreateUser(c context.Context, req *domain.CreateUserReq) (
 func (s *UserService) Login(c context.Context, req *domain.LoginUserReq) (*domain.LoginUserRes, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
-	fmt.Println("[user service login 1]", req.Email, req.Password, "[user service login 1]")
+
 	user, err := s.repo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		return &domain.LoginUserRes{}, err
 	}
-	fmt.Println("[user service login 2]", user)
 	err = utils.CheckPassword(req.Password, user.Password)
 	if err != nil {
 		return &domain.LoginUserRes{}, err

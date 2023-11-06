@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"chatie.com/internal/domain"
+	"chatie.com/internal/services"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/gorilla/websocket"
@@ -15,12 +16,12 @@ const (
 )
 
 type HubHandler struct {
-	hub *domain.Hub
+	hub *services.HubService
 }
 
-func NewHandler(h *domain.Hub) *HubHandler {
+func NewHubHandler(h *services.HubService) *HubHandler {
 	return &HubHandler{
-		hub: h,
+		h,
 	}
 }
 
@@ -40,7 +41,7 @@ func (h *HubHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.hub.Rooms[roomReq.ID] = &domain.Room{
+	h.hub.Hub.Rooms[roomReq.ID] = &domain.Room{
 		ID:      roomReq.ID,
 		Name:    roomReq.Name,
 		Clients: make(map[string]*domain.Client),
@@ -76,17 +77,17 @@ func (h *HubHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		Username: username,
 	}
 
-	h.hub.Register <- cl
-	h.hub.Broadcast <- m
+	h.hub.Hub.Register <- cl
+	h.hub.Hub.Broadcast <- m
 
 	go cl.WriteMessage()
-	cl.ReadMessage(h.hub)
+	cl.ReadMessage(h.hub.Hub)
 }
 
 func (h *HubHandler) GetRooms(w http.ResponseWriter, r *http.Request) {
 	rooms := make([]domain.RoomRes, 0)
 
-	for _, r := range h.hub.Rooms {
+	for _, r := range h.hub.Hub.Rooms {
 		rooms = append(rooms, domain.RoomRes{
 			ID:   r.ID,
 			Name: r.Name,
@@ -101,13 +102,13 @@ func (h *HubHandler) GetClients(w http.ResponseWriter, r *http.Request) {
 	var clients []domain.ClientRes
 	roomId := chi.URLParam(r, "roomId")
 
-	if _, ok := h.hub.Rooms[roomId]; !ok {
+	if _, ok := h.hub.Hub.Rooms[roomId]; !ok {
 		clients = make([]domain.ClientRes, 0)
 		render.Status(r, http.StatusOK)
 		render.JSON(w, r, clients)
 	}
 
-	for _, c := range h.hub.Rooms[roomId].Clients {
+	for _, c := range h.hub.Hub.Rooms[roomId].Clients {
 		clients = append(clients, domain.ClientRes{
 			ID:       c.ID,
 			Username: c.Username,
